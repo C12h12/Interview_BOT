@@ -1,0 +1,906 @@
+{% extends "base.html" %} {% block content %}
+
+<style>
+  /* Disable scroll everywhere */
+  html,
+  body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden !important;
+  }
+
+  /* Disable base file buttons */
+  .btn,
+  button {
+    pointer-events: none;
+    opacity: 0.5;
+  }
+
+  /* Fullscreen countdown overlay */
+  #countdown-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 2rem;
+    z-index: 9999;
+  }
+
+  /* Chat container */
+  .chat-container {
+    height: 80vh;
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 20vh;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  /* Chat box (main area) */
+  #chat-box {
+    flex: 1;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 15px;
+    background: #fff;
+    position: relative; /* only for internal positioning */
+  }
+
+  .message {
+    margin-bottom: 15px;
+  }
+  .bot {
+    font-weight: bold;
+    color: #0d6efd;
+  }
+  .user {
+    font-weight: bold;
+    color: #198754;
+  }
+
+  /* Camera fixed exactly at bottom-right inside chat-box */
+  #camera {
+    width: 200px;
+    height: 150px;
+    background: #000;
+    border-radius: 10px;
+    overflow: hidden;
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.4);
+    z-index: 1000;
+  }
+
+  #camera video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .main-screen {
+    text-align: center;
+  }
+
+  #mic-container {
+    position: absolute;
+    bottom: 7%;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  #mic-btn:focus {
+    outline: none;
+  }
+
+  #mic-icon {
+    font-size: 22px;
+  }
+
+  .shape-left {
+    left: 0;
+    max-width: 0;
+    overflow: hidden;
+  }
+
+  .message {
+    display: flex;
+    margin-bottom: 15px;
+  }
+
+  .message.question {
+    justify-content: flex-start;
+  }
+
+  .message.answer {
+    justify-content: flex-end;
+  }
+
+  .bubble {
+    max-width: 70%;
+    padding: 10px 15px;
+    border-radius: 15px;
+    word-wrap: break-word;
+  }
+
+  .bubble.question {
+    background: #f1f1f1;
+    color: #333;
+    border-bottom-left-radius: 0;
+  }
+
+  .bubble.answer {
+    background: #0d6efd;
+    color: white;
+    border-bottom-right-radius: 0;
+  }
+
+  /* Mic Status Indicator */
+  #mic-status {
+    position: absolute;
+    bottom: 25px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255, 255, 255, 0.9);
+    padding: 8px 15px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #334155;
+    z-index: 500;
+  }
+
+  .status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #94a3b8;
+  }
+
+  .status-dot.recording {
+    background: #ef4444;
+    animation: pulse 1.5s infinite;
+  }
+
+  @keyframes pulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.4); opacity: 0.7; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  /* Transition Overlay */
+  #transition-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.98);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    z-index: 10000;
+    text-align: center;
+    padding: 2rem;
+  }
+
+  /* End Round Button */
+  #end-round-btn {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 6px 15px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-left: 10px;
+    transition: background 0.2s;
+  }
+  #end-round-btn:hover {
+    background: #bb2d3b;
+  }
+
+  #transition-overlay h2 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    color: #38bdf8;
+  }
+
+  #transition-overlay p {
+    font-size: 1.25rem;
+    opacity: 0.9;
+  }
+
+  .loader {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #38bdf8;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite;
+    margin-bottom: 2rem;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+</style>
+
+<!-- Countdown Overlay -->
+<div id="countdown-overlay">
+  <div id="countdown-message">
+    Your interview will start in <span id="countdown">5</span> sec
+  </div>
+</div>
+
+<!-- Transition Overlay -->
+<div id="transition-overlay">
+  <div class="loader"></div>
+  <h2 id="trans-title">Round 1 Complete</h2>
+  <p id="trans-msg">Preparing HR Round...</p>
+</div>
+
+<!-- End Round Early Button (Bottom Center) -->
+<div id="early-end-container" style="
+    position: fixed;
+    bottom: 25px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    display: none; /* Hidden by default, shown during rounds */
+">
+    <button id="end-round-btn" onclick="endRoundEarly()" style="
+        background: #dc3545;
+        color: white;
+        border: none;
+        padding: 12px 28px;
+        border-radius: 50px;
+        font-weight: 700;
+        cursor: pointer !important;
+        display: block;
+        box-shadow: 0 4px 15px rgba(220, 53, 69, 0.4);
+        font-size: 15px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        outline: none;
+        pointer-events: auto !important;
+    ">End Round Early</button>
+</div>
+
+
+<div class="main-screen container mt-4 chat-container">
+  <!-- Add this somewhere in interview_page.html (e.g. near header) -->
+  <div style="margin-bottom: 10px;">
+    <div id="demo-timer" style="
+        background: #e48484;
+        color: #fff;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-weight: 600;
+        display: none;
+        width: fit-content;      /* Auto width */
+    ">
+      Time left: <span id="time-left">--:--</span>
+    </div>
+  </div>
+
+  <!-- Heading -->
+  <h3 class="mb-3">{{ heading_title }} Round</h3>
+
+  <!-- Chat Area -->
+  <div style="position: relative; flex: 1; display: flex; flex-direction: column; overflow: hidden; border: 1px solid #ddd; border-radius: 10px; background: #fff;">
+    <div id="chat-box" style="flex: 1; overflow-y: auto; padding: 15px;"></div>
+    
+    <!-- Mic Status positioned relative to chat area but not inside the scrollable/clearable box -->
+    <div id="mic-status">
+        <div class="status-dot" id="status-dot"></div>
+        <span id="status-text">Initializing...</span>
+    </div>
+  </div>
+  <!-- Camera attached inside -->
+  <div id="camera">
+    <video id="video" autoplay muted></video>
+  </div>
+</div>
+
+<!-- Summary Modal -->
+<div id="summaryModal" style="
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center;
+  z-index: 9999;
+">
+  <div style="
+    background: #fff;
+    width: 60%;
+    padding: 20px;
+    border-radius: 8px;
+    max-height: 80%;
+    overflow-y: auto;
+    position: relative;
+  ">
+    <h2>Interview Result Summary</h2>
+
+    <div id="summaryContent"></div>
+  </div>
+</div>
+
+
+<script>
+  // === Camera & Mic Access ===
+  navigator.mediaDevices
+    .getUserMedia({ video: true, audio: true }) // ask for both
+    .then((stream) => {
+      // Attach camera stream to video element
+      document.getElementById("video").srcObject = stream;
+
+      // Save mic track but mute initially (control mic ON/OFF manually later)
+      window.localStream = stream;
+      window.audioTrack = stream.getAudioTracks()[0];
+      if (window.audioTrack) {
+        window.audioTrack.enabled = false; // keep mic OFF by default
+        console.log("Mic access granted but OFF initially");
+      }
+    })
+    .catch((err) => console.error("Camera/Mic access denied:", err));
+
+  // === Countdown Overlay ===
+  let countdown = 5;
+  const countdownElement = document.getElementById("countdown");
+  const overlay = document.getElementById("countdown-overlay");
+
+  const timer = setInterval(() => {
+    countdown--;
+    countdownElement.textContent = countdown;
+    if (countdown <= 0) {
+      clearInterval(timer);
+      overlay.style.display = "none"; // Hide overlay
+      // TODO: Connect websocket here
+      connectWebSocket();
+    }
+  }, 1000);
+</script>
+
+<script>
+  function openSummaryModal(summaryHTML) {
+    document.getElementById("summaryContent").innerHTML = summaryHTML;
+    document.getElementById("summaryModal").style.display = "flex";
+  }
+
+  function getStars(score) {
+    const s = parseFloat(score) || 0;
+    const full = Math.floor(s);
+    return "⭐".repeat(full) + (s - full >= 0.5 ? "⭐" : "");
+  }
+
+  function endRoundEarly() {
+    console.log("End Round Early clicked");
+    if (confirm("⚠️ WARNING: Are you sure you want to end this round early? This will skip the remaining time and move to the next phase.")) {
+       if (socket && socket.readyState === WebSocket.OPEN) {
+          socket.send(JSON.stringify({ type: "time_up" }));
+          // Immediately hide to prevent double click
+          document.getElementById("early-end-container").style.display = "none";
+       } else {
+         alert("Unable to send request. Connection might be closed.");
+       }
+    }
+  }
+
+  function closeSummaryModal() {
+    console.log("Closing summary modal");
+    document.getElementById("summaryModal").style.display = "none";
+  }
+
+  let socket = null;
+  let demoRemaining = 0;
+  let timerEl = null;
+  let timeLeftEl = null;
+  let timerStarted = false;
+
+  let countdownInterval = null;
+  let currentMsLeft = 0;
+  let isTransitioning = false;
+  let pendingQuestion = null;
+  
+  // Called whenever backend sends an updated remaining time
+  function updateTimerDisplay() {
+    if (!timerEl || !timeLeftEl) {
+      timerEl = document.getElementById("demo-timer");
+      timeLeftEl = document.getElementById("time-left");
+    }
+
+    if (!timerEl || !timeLeftEl) return;
+
+    const seconds = Math.ceil(currentMsLeft / 1000);
+    const earlyEndContainer = document.getElementById("early-end-container");
+
+    if (seconds <= 0) {
+      timerEl.style.display = "none";
+      if (earlyEndContainer) earlyEndContainer.style.display = "none";
+      timeLeftEl.textContent = "00:00";
+      return;
+    }
+
+    const minutes = Math.floor(seconds / 60);
+    const remSeconds = seconds % 60;
+    timerEl.style.display = "block";
+    if (earlyEndContainer && !isTransitioning) earlyEndContainer.style.display = "block";
+    timeLeftEl.textContent = `${String(minutes).padStart(2, '0')}:${String(remSeconds).padStart(2, '0')}`;
+  }
+
+  function startLocalTimer(seconds) {
+    currentMsLeft = seconds * 1000;
+    
+    if (countdownInterval) clearInterval(countdownInterval);
+    
+    countdownInterval = setInterval(() => {
+      currentMsLeft -= 1000;
+      if (currentMsLeft <= 0) {
+        currentMsLeft = 0;
+        clearInterval(countdownInterval);
+        // Force server to check transition
+        if (socket && socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify({ type: "time_up" }));
+        }
+      }
+      updateTimerDisplay();
+    }, 1000);
+    
+    updateTimerDisplay();
+  }
+
+  function connectWebSocket() {
+    // Replace this with your actual backend WebSocket endpoint
+    const wsUrl = "{{ chat_socket_url }}";
+
+    socket = new WebSocket(wsUrl);
+
+    socket.onopen = function () {
+      console.log("✅ WebSocket connected");
+    };
+
+    socket.onmessage = function (event) {
+      const data = JSON.parse(event.data);
+      console.log("📩 Message from server:", data);
+
+      if (data.error === "No demo/paid time available. Please purchase or contact admin.") {
+        alert(data.error);
+        window.location.href = "/interview_practice";  // Redirect to subscription/purchase page
+        return;
+      }
+
+      // 🕒 Handle time update
+      if (data.type === "time_update" && typeof data.remaining_seconds !== "undefined") {
+        demoRemaining = parseInt(data.remaining_seconds, 10);
+        startLocalTimer(demoRemaining);
+      }
+
+      // 🏆 Handle round transition
+      if (data.type === "round_complete") {
+        console.log("🔄 Round transition triggered");
+        
+        // Stop the bot from speaking immediately
+        window.speechSynthesis.cancel();
+
+        // Show Transition Page (Overlay)
+        const transOverlay = document.getElementById("transition-overlay");
+        const transTitle = document.getElementById("trans-title");
+        const transMsg = document.getElementById("trans-msg");
+        
+        transTitle.textContent = data.heading ? data.heading + " Round Starting" : "Round Complete";
+        transMsg.textContent = data.message || "Preparing next round...";
+        transOverlay.style.display = "flex";
+        isTransitioning = true;
+
+        // Stop current timer
+        if (countdownInterval) clearInterval(countdownInterval);
+
+        // Update Heading in background
+        if(data.heading) {
+            const h3 = document.querySelector('h3');
+            if(h3) h3.textContent = data.heading + " Round";
+        }
+        
+        // Clear chat box for "New text box window" experience
+        const chatBox = document.getElementById("chat-box");
+        chatBox.innerHTML = ""; 
+
+        // Wait 5 seconds then start fresh
+        setTimeout(() => {
+            transOverlay.style.display = "none";
+            isTransitioning = false;
+
+            // Restart local timer at 60s
+            startLocalTimer(60);
+            
+            // If a question was buffered, show it now
+            if (pendingQuestion) {
+                handleIncomingQuestion(pendingQuestion);
+                pendingQuestion = null;
+            }
+        }, 5000);
+      }
+
+      // ⏰ Handle time expiration
+
+      if (data.type === "session_complete" && data.summary) {
+        const s = data.summary;
+        try { socket.close(); } catch(e){}
+
+        // Stop the bot from speaking
+        window.speechSynthesis.cancel();
+
+        // Show Transition Overlay for completion
+        const transOverlay = document.getElementById("transition-overlay");
+        const transTitle = document.getElementById("trans-title");
+        const transMsg = document.getElementById("trans-msg");
+        
+        transTitle.textContent = "Interview Completed";
+        transMsg.textContent = "Great job! Please wait while we generate your performance report...";
+        transOverlay.style.display = "flex";
+
+        const html = `
+          <div style="font-family: Arial, sans-serif; line-height: 1.5;">
+            
+            <h3>Candidate Details</h3>
+            <p><strong>Name:</strong> ${s.candidate_details.name}</p>
+            <p><strong>Interview Mode:</strong> ${s.candidate_details.interview_mode}</p>
+            <p><strong>Difficulty:</strong> ${s.candidate_details.difficulty_level}</p>
+            <p><strong>Date & Time:</strong> ${s.candidate_details.date_time}</p>
+
+            <hr>
+
+            <h3>Interview Summary</h3>
+            <p><strong>Total Questions:</strong> ${s.interview_summary.total_questions}</p>
+            <p><strong>Average Score:</strong> ${getStars(s.overall.average_score)} (${s.overall.average_score}/5)</p>
+
+            ${
+              s.interview_summary.summary_text?.strengths
+                ? `<p><strong>Strengths:</strong> ${s.interview_summary.summary_text.strengths}</p>`
+                : ""
+            }
+            ${
+              s.interview_summary.summary_text?.weaknesses
+                ? `<p><strong>Weaknesses:</strong> ${s.interview_summary.summary_text.weaknesses}</p>`
+                : ""
+            }
+            ${
+              s.interview_summary.summary_text?.engagement
+                ? `<p><strong>Engagement:</strong> ${s.interview_summary.summary_text.engagement}</p>`
+                : ""
+            }
+
+            <hr>
+            
+            <div id="reportActions" style="margin-top: 20px; display: flex; flex-direction: column; gap: 15px;">
+                <div style="display: flex; gap: 10px;">
+                    <a id="downloadReportBtn" href="/download_report/${s.report_id}/" class="btn btn-primary" style="flex: 1; text-align: center; text-decoration: none; background: #0d6efd; color: white; padding: 10px; border-radius: 6px; font-weight: bold; pointer-events: auto !important; opacity: 1;">📥 Download PDF Report</a>
+                </div>
+                
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                    <label style="display: block; font-weight: bold; margin-bottom: 8px; color: #334155;">📧 Email Report to Candidate</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="email" id="reportEmail" placeholder="candidate@example.com" style="flex: 1; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; pointer-events: auto !important; opacity: 1;">
+                        <button onclick="emailReport('${s.report_id}')" style="background: #059669; color: white; border: none; padding: 8px 20px; border-radius: 6px; font-weight: bold; pointer-events: auto !important; opacity: 1;">Send</button>
+                    </div>
+                    <p id="reportEmailStatus" style="font-size: 0.85rem; margin-top: 8px; display: none;"></p>
+                </div>
+            </div>
+
+            <hr>
+
+            <h3>Technical Questions</h3>
+            ${
+              s.tech_section.length > 0
+                ? s.tech_section
+                    .map(
+                      (q, i) => `
+                    <div style="margin-bottom: 12px;">
+                      <p><b>Q${i + 1}:</b> ${q.question}</p>
+                      <p><b>A${i + 1}:</b> ${q.answer}</p>
+                      <p><i>${q.comment || ""}</i></p>
+                      <p><b>Score:</b> ${q.score}/5</p>
+                    </div>`
+                    )
+                    .join("")
+                : "<p>No technical questions answered.</p>"
+            }
+          </div>
+        `;
+
+        setTimeout(() => {
+            transOverlay.style.display = "none";
+            openSummaryModal(html);
+        }, 5000);
+      }
+
+
+
+      // Example: append message to chat box
+      const chatBox = document.getElementById("chat-box");
+      if (chatBox) {
+        // Show question (if exists)
+        if (data.question) {
+           if (isTransitioning) {
+               console.log("⏳ Buffering HR question during transition...");
+               pendingQuestion = data;
+               return;
+           }
+           handleIncomingQuestion(data);
+        }
+
+        // Show answer (if exists)
+        if (data.answer) {
+          const aDiv = document.createElement("div");
+          aDiv.className = "message answer";
+          aDiv.innerHTML = `<div class="bubble answer">${data.answer}</div>`;
+          chatBox.appendChild(aDiv);
+        }
+
+        // Auto scroll
+        chatBox.scrollTop = chatBox.scrollHeight;
+      }
+    };
+
+    function handleIncomingQuestion(data) {
+      const chatBox = document.getElementById("chat-box");
+      const qDiv = document.createElement("div");
+      qDiv.className = "message question";
+      qDiv.innerHTML = `<div class="bubble question">${data.question}</div>`;
+      chatBox.appendChild(qDiv);
+
+      // 🔊 Play audio of the question
+      updateMicStatus("speaking", "Bot is speaking...");
+      
+      const utterance = new SpeechSynthesisUtterance(data.question);
+      utterance.lang = "en-US";
+      window.speechSynthesis.speak(utterance);
+      utterance.onend = () => {
+        startMic();
+      };
+      
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    socket.onclose = function () {};
+
+    socket.onerror = function (error) {};
+  }
+
+  async function emailReport(reportId) {
+    const email = document.getElementById('reportEmail').value;
+    const statusEl = document.getElementById('reportEmailStatus');
+    
+    if (!email) {
+      alert("Please enter an email address!");
+      return;
+    }
+
+    statusEl.style.display = 'block';
+    statusEl.style.color = '#64748b';
+    statusEl.textContent = "⌛ Sending report...";
+
+    try {
+      const formData = new FormData();
+      formData.append('report_id', reportId);
+      formData.append('email', email);
+
+      const response = await fetch("/email_report/", {
+        method: "POST",
+        headers: {
+          "X-CSRFToken": "{{ csrf_token }}"
+        },
+        body: formData
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        statusEl.style.color = '#059669';
+        statusEl.textContent = "✅ Report sent successfully!";
+      } else {
+        statusEl.style.color = '#dc2626';
+        statusEl.textContent = "❌ " + (data.error || "Failed to send report");
+      }
+    } catch (err) {
+      statusEl.style.color = '#dc2626';
+      statusEl.textContent = "❌ Error connecting to server.";
+    }
+  }
+
+  // =======================
+  // CONFIG
+  // =======================
+  let noiseFloor = 0.01;
+  let smoothing = 0.95;
+
+  const RELATIVE_FACTOR = 2.2;        // how much louder than noise
+  const ABSOLUTE_MIN_RMS = 0.008;     // minimum RMS required to count as voice
+  const START_FRAMES = 3;             // must detect 3 frames of speech before start
+  const STOP_FRAMES = 80;             // ~1.5 sec depending on 60fps → prevents early stop
+
+  // =======================
+  // STATE
+  // =======================
+  let micStream;
+  let mediaRecorder;
+  let audioChunks = [];
+  let audioContext, analyser, dataArray, source;
+  let silenceTimer = null;
+  let analyzing = false;
+
+  let startCounter = 0;
+  let stopCounter = 0;
+
+
+  // =======================
+  // START MIC
+  // =======================
+  async function startMic() {
+    micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+    mediaRecorder = new MediaRecorder(micStream, { mimeType: "audio/webm" });
+
+    mediaRecorder.ondataavailable = (event) => {
+      if (event.data.size > 0) audioChunks.push(event.data);
+    };
+
+    mediaRecorder.onstop = () => {
+      if (audioChunks.length > 0) {
+        const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+        audioChunks = [];
+
+        if (socket && socket.readyState === WebSocket.OPEN) {
+          console.log("📤 Sending speech blob to backend...");
+          socket.send(audioBlob);
+        }
+      }
+
+      stopMic();
+    };
+
+    // ANALYSER
+    audioContext = new AudioContext();
+    source = audioContext.createMediaStreamSource(micStream);
+    analyser = audioContext.createAnalyser();
+    analyser.fftSize = 1024;
+
+    dataArray = new Uint8Array(analyser.fftSize);
+
+    source.connect(analyser);
+
+    analyzing = true;
+    detectSpeech();
+
+    updateMicStatus("recording", "Listening...");
+  }
+
+  function updateMicStatus(className, text) {
+    const dot = document.getElementById("status-dot");
+    const label = document.getElementById("status-text");
+    dot.className = "status-dot " + className;
+    label.textContent = text;
+  }
+
+  // =======================
+  // STOP MIC
+  // =======================
+  function stopMic() {
+    analyzing = false;
+
+    try {
+      if (mediaRecorder && mediaRecorder.state === "recording") {
+        mediaRecorder.stop();
+      }
+    } catch (e) {}
+
+    if (micStream) {
+      micStream.getTracks().forEach((t) => t.stop());
+    }
+
+    if (audioContext) {
+      try { audioContext.close(); } catch (e) {}
+      audioContext = null;
+    }
+
+    if (silenceTimer) clearTimeout(silenceTimer);
+
+    updateMicStatus("", "Mic Off");
+  }
+
+
+  // =======================
+  // STABLE RMS-BASED VAD
+  // =======================
+  function detectSpeech() {
+    if (!analyzing || !analyser) return;
+
+    analyser.getByteTimeDomainData(dataArray);
+
+    // RMS calculation
+    let sum = 0;
+    for (let i = 0; i < dataArray.length; i++) {
+      const v = (dataArray[i] - 128) / 128;
+      sum += v * v;
+    }
+    const rms = Math.sqrt(sum / dataArray.length);
+
+    // Update noise floor only when quiet
+    if (rms < noiseFloor * 1.3) {
+      noiseFloor = smoothing * noiseFloor + (1 - smoothing) * rms;
+    }
+
+    // Dynamic threshold
+    const threshold = Math.max(noiseFloor * RELATIVE_FACTOR, ABSOLUTE_MIN_RMS);
+
+    const isSpeech = rms > threshold;
+
+    if (isSpeech) {
+      startCounter++;
+      stopCounter = 0;
+
+      if (startCounter >= START_FRAMES) {
+        if (mediaRecorder.state === "inactive") {
+          console.log("🎙️ Speech detected → recording started");
+          mediaRecorder.start();
+        }
+
+        if (silenceTimer) {
+          clearTimeout(silenceTimer);
+          silenceTimer = null;
+        }
+      }
+    } else {
+      startCounter = 0;
+      stopCounter++;
+
+      // Stop only after long silence
+      if (stopCounter >= STOP_FRAMES) {
+        if (mediaRecorder.state === "recording" && !silenceTimer) {
+          silenceTimer = setTimeout(() => {
+            console.log("⏹️ Silence → stop recording");
+            updateMicStatus("speaking", "Processing..."); // Visual feedback for transcription
+            mediaRecorder.stop();
+          }, 0);
+        }
+      }
+    }
+
+    requestAnimationFrame(detectSpeech);
+  }
+
+</script>
+
+<script>
+  document.getElementById("summaryModal").addEventListener("click", function(e) {
+    if (e.target.id === "summaryModal") {
+      // Close the modal if needed
+      closeSummaryModal();
+
+      // Redirect to a different page
+      window.location.href = "/interview_practice"; 
+      // Example: window.location.href = "/dashboard";
+    }
+  });
+
+  window.onbeforeunload = function () {
+    console.log("Cleanup on leave");
+    window.speechSynthesis.cancel();
+  };
+</script>
+
+{% endblock content %}

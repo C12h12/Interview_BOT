@@ -1,0 +1,7 @@
+transformers
+accelerate
+bitsandbytes
+torch
+huggingface_hub
+PyMuPDF
+xhtml2pdf

@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #f1f5f9;
+  }
+
+  .admin-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+
+  .premium-card {
+    background: white;
+    border-radius: 20px;
+    padding: 3rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);
+    max-width: 600px;
+    width: 100%;
+    text-align: center;
+  }
+
+  .premium-card h2 {
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 0.5rem;
+    font-size: 2rem;
+  }
+
+  .premium-card p {
+    color: #64748b;
+    margin-bottom: 2rem;
+  }
+
+  .form-group {
+    margin-bottom: 1.5rem;
+    text-align: left;
+  }
+
+  .custom-label {
+    display: block;
+    color: #334155;
+    font-weight: 600;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+  }
+
+  .custom-input {
+    width: 100%;
+    border-radius: 12px;
+    padding: 0.8rem 1rem;
+    border: 1.5px solid #e2e8f0;
+    font-size: 1rem;
+    transition: all 0.2s;
+  }
+
+  .custom-input:focus {
+    border-color: #3b82f6;
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+  }
+
+  .generate-btn {
+    background: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 1rem;
+    width: 100%;
+    font-weight: 600;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .generate-btn:hover {
+    background: #1d4ed8;
+  }
+
+  .link-box {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: #f8fafc;
+    border: 1px dashed #cbd5e1;
+    border-radius: 12px;
+    text-align: left;
+    display: none;
+  }
+
+  .link-box.active {
+    display: block;
+    animation: fadeIn 0.4s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+
+<div class="admin-page">
+  <div class="premium-card">
+    <h2>💼 HR Dashboard</h2>
+    <p>Configure and generate an interview invitation link for candidates.</p>
+
+    <form id="hrForm">
+      <div class="form-group">
+        <label class="custom-label">Select Difficulty</label>
+        <select class="custom-input" name="difficulty" id="difficulty">
+          <option value="easy">Easy</option>
+          <option value="medium" selected>Medium</option>
+          <option value="hard">Hard</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="custom-label">Interview Type</label>
+        <select class="custom-input" name="round_type" id="round_type">
+          <option value="aptitude">Aptitude Round</option>
+          <option value="technical">Technical Round</option>
+          <option value="hr">HR Round</option>
+          <option value="all">Aptitude + Technical + HR Round</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="custom-label">Upload Job Description (JD) - <span style="color:#dc2626">Required</span></label>
+        <input type="file" class="custom-input" name="jd_file" id="jd_file" accept=".pdf,.doc,.docx" required>
+      </div>
+
+      <button type="button" class="generate-btn" id="generateBtn">🚀 Generate Invitation Link</button>
+    </form>
+
+    <div class="link-box" id="linkBox">
+      <label class="custom-label" style="display:flex; justify-content: space-between;">
+        Share this unique link with the candidate:
+        <span style="color: #2563eb; cursor:pointer;" onclick="copyLink()">Copy</span>
+      </label>
+      <code id="generatedLink" style="font-size: 0.85rem; word-break: break-all; color: #1e293b; background: #fff; padding: 10px; border-radius: 6px; display: block; margin-top: 8px; border: 1px solid #e2e8f0;">
+        ---
+      </code>
+
+      <div style="margin-top: 1.5rem; border-top: 1px solid #e2e8f0; padding-top: 1.5rem;">
+        <label class="custom-label">Optional: Send to Candidate Email</label>
+        <div style="display: flex; gap: 10px;">
+          <input type="email" id="candidateEmail" class="custom-input" placeholder="candidate@example.com" style="flex: 1;">
+          <button type="button" class="generate-btn" id="sendEmailBtn" style="width: auto; padding: 0.8rem 1.5rem; background: #059669;">✉️ Send</button>
+        </div>
+        <p id="emailStatus" style="font-size: 0.8rem; margin-top: 8px; display: none;"></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  async function generateLink() {
+    const diff = document.getElementById('difficulty').value;
+    const type = document.getElementById('round_type').value;
+    const jdFile = document.getElementById('jd_file').files[0];
+    
+    if (!jdFile) {
+      alert("Please upload a Job Description (JD) file first!");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('difficulty', diff);
+    formData.append('round_type', type);
+    formData.append('jd_file', jdFile);
+    
+    const response = await fetch("{% url 'generate_invite' %}", {
+      method: "POST",
+      headers: {
+        "X-CSRFToken": "{{ csrf_token }}"
+      },
+      body: formData
+    });
+    
+    const data = await response.json();
+    if (data.url) {
+      document.getElementById('generatedLink').textContent = data.url;
+      document.getElementById('linkBox').classList.add('active');
+    }
+  }
+
+  document.getElementById('generateBtn').onclick = generateLink;
+
+  function copyLink() {
+    const text = document.getElementById('generatedLink').textContent;
+    navigator.clipboard.writeText(text);
+    alert("Link copied to clipboard!");
+  }
+
+  document.getElementById('sendEmailBtn').onclick = async function() {
+    const email = document.getElementById('candidateEmail').value;
+    const url = document.getElementById('generatedLink').textContent;
+    const statusEl = document.getElementById('emailStatus');
+    
+    if (!email) {
+      alert("Please enter a candidate email address!");
+      return;
+    }
+
+    statusEl.style.display = 'block';
+    statusEl.style.color = '#64748b';
+    statusEl.textContent = "Sending email...";
+    this.disabled = true;
+
+    try {
+      const formData = new FormData();
+      formData.append('email', email);
+      formData.append('url', url);
+
+      const response = await fetch("{% url 'send_interview_link' %}", {
+        method: "POST",
+        headers: {
+          "X-CSRFToken": "{{ csrf_token }}"
+        },
+        body: formData
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        statusEl.style.color = '#059669';
+        statusEl.textContent = "✅ Email sent successfully!";
+      } else {
+        statusEl.style.color = '#dc2626';
+        statusEl.textContent = "❌ " + (data.error || "Failed to send email");
+      }
+    } catch (err) {
+      statusEl.style.color = '#dc2626';
+      statusEl.textContent = "❌ Error connecting to server.";
+    } finally {
+      this.disabled = false;
+    }
+  };
+</script>
+{% endblock content %}

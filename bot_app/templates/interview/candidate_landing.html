@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #f0f4f8;
+  }
+
+  .invite-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1rem;
+    background-image: radial-gradient(circle at top right, #e0e8ff 0%, #f0f4f8 100%);
+  }
+
+  .premium-card {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    padding: 3.5rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+    max-width: 550px;
+    width: 100%;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.4);
+    text-align: center;
+    animation: fadeInUp 0.6s ease-out both;
+  }
+
+  .premium-card h2 {
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 1.5rem;
+    font-size: 2.4rem;
+    letter-spacing: -1px;
+  }
+
+  .premium-card p {
+    color: #64748b;
+    line-height: 1.6;
+    font-size: 1.15rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .info-tag {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 20px;
+    background: #e0e7ff;
+    color: #4338ca;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .custom-label {
+    display: block;
+    color: #334155;
+    font-weight: 600;
+    margin-bottom: 12px;
+    text-align: left;
+    font-size: 1rem;
+  }
+
+  .custom-input {
+    width: 100%;
+    border-radius: 12px;
+    padding: 1rem;
+    border: 1.5px solid #cbd5e1;
+    background: #f8fafc;
+    transition: all 0.3s ease;
+    font-size: 1.1rem;
+    color: #0f172a;
+    box-sizing: border-box;
+    cursor: pointer;
+  }
+
+  .custom-input:focus {
+    border-color: #3b82f6;
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+    outline: none;
+  }
+
+  .start-btn {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    border: none;
+    border-radius: 12px;
+    padding: 1.25rem 2rem;
+    font-size: 1.2rem;
+    font-weight: 600;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    color: #fff;
+    width: 100%;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+    margin-top: 1.5rem;
+  }
+
+  .start-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(37, 99, 235, 0.4);
+  }
+
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+
+<div class="invite-page">
+  <div class="premium-card">
+    <div class="info-tag">Invitation from HR</div>
+    <h2>Start Your Test</h2>
+
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      
+      <div style="margin-bottom: 2rem;">
+        <label for="resumeFile" class="custom-label">Upload your latest Resume</label>
+        <input class="custom-input" type="file" id="resumeFile" name="resumeFile" accept=".pdf,.doc,.docx" required>
+      </div>
+
+      <button type="submit" class="start-btn">
+        🚀 Begin Interview
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock content %}
