@@ -21,36 +21,6 @@ def run_interview(level, type,job_desc_text, resume_text):
         remaining = interview_duration - elapsed
         return remaining
 
-    def process_candidate_input(user_input):
-        text = user_input.lower()
-
-        # Check for pause/break requests
-
-        # ✅ Check for "X minutes"
-        match_min = re.search(r'wait\s*for\s*(\d+)\s*minute', text)
-        if match_min:
-            minutes = int(match_min.group(1))
-            # print(f"🧑‍💼 Interviewer: Sure, take your {minutes} minute(s).")
-            time.sleep(minutes * 60)   # pause in seconds
-            # print("🧑‍💼 Interviewer: Okay, hope you’re ready now! Let’s continue with the interview.")
-            return None
-
-        # ✅ Check for "X seconds"
-        match_sec = re.search(r'wait\s*for\s*(\d+)\s*second', text)
-        if match_sec:
-            seconds = int(match_sec.group(1))
-            # print(f"🧑‍💼 Interviewer: Sure, take your {seconds} second(s).")
-            time.sleep(seconds)
-            # print("🧑‍💼 Interviewer: Okay, hope you’re ready now! Let’s continue with the interview.")
-            return None
-
-        # ✅ Generic pause without time
-        if "wait" in text or "pause" in text or "break" in text:
-            # print("🧑‍💼 Interviewer: Sure, take your time. Let me know when you’re ready.")
-            return None
-
-        return user_input
-
     threading.Thread(target=end_interview_after_timeout, daemon=True).start()
 
     base_prompt = f"""
@@ -61,7 +31,7 @@ context-aware questions and give constructive feedback.
 📌 Context
 ------------------------------------------------------------------
 Interview Level: {get_level_prompt(level)}   # Easy / Moderate / Hard
-Interview Type: {type_prompt(type)}   # HR / Technical / Mixed
+Interview Type: {type_prompt(type)}   
 Job Description (JD): 
 {job_desc_text}
 

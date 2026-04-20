@@ -141,18 +141,23 @@
         </p>
     </div>
 
-    {% if data.tech_section %}
+    {% if data.grouped_rounds %}
     <div class="section">
         <div class="section-title">4. Assessment Details</div>
-        {% for item in data.tech_section %}
-        <div class="question-box">
-            <div class="question-text">Q{{ forloop.counter }}: {{ item.question }}</div>
-            <div class="answer-text">A: {{ item.answer }}</div>
-            {% if item.comment %}
-                <div style="font-size: 13px; color: #666; margin-top: 5px;"><i>Feedback: {{ item.comment }}</i></div>
-            {% endif %}
-            <div class="score">Score: {{ item.score }}/5</div>
-        </div>
+        {% for round in data.grouped_rounds %}
+            <div style="background-color: #f1f5f9; padding: 10px; margin-top: 20px; border-radius: 5px; border-left: 4px solid #0d6efd;">
+                <h4 style="margin: 0; color: #1e293b; text-transform: uppercase;">{{ round.name }} Assessment</h4>
+            </div>
+            {% for item in round.items %}
+            <div class="question-box">
+                <div class="question-text">Q{{ forloop.counter }}: {{ item.question }}</div>
+                <div class="answer-text">A: {{ item.answer }}</div>
+                {% if item.comment %}
+                    <div style="font-size: 13px; color: #666; margin-top: 5px;"><i>Feedback: {{ item.comment }}</i></div>
+                {% endif %}
+                <div class="score">Score: {{ item.score }}/5</div>
+            </div>
+            {% endfor %}
         {% endfor %}
     </div>
     {% endif %}

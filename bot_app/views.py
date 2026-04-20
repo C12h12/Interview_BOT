@@ -195,15 +195,36 @@ def send_interview_link(request):
         if not candidate_email or not invite_url:
             return JsonResponse({"error": "Email and URL are required"}, status=400)
 
-        subject = "Your Interview Invitation - Practice Round"
+        subject = "📝 Official Interview Invitation - AI Evaluation Portal"
         message = f"""Dear Candidate,
 
-We are pleased to invite you to an interview session. Please use the link below to access your interview portal:
+We are delighted to inform you that your profile has been shortlisted for the initial assessment stage of our selection process.
 
+As part of our precision-driven recruitment workflow, you are invited to a specialized AI-powered evaluation. This session will assess your technical proficiency, logical reasoning, and behavioral dynamics within a simulated professional environment.
+
+📌 Assessment Overview:
+------------------------------------------------------------------
+- Duration: Approximately 20-30 Minutes
+- Format: Interactive AI-Voice Assessment
+- Modules: Aptitude, Technical Evaluation & HR Behavioral Round
+
+🔗 Access Your Secure Interview Portal:
 {invite_url}
 
-Good luck!
-HR Recruitment Team
+🚀 Preparation Checklist:
+- Ensure you are in a quiet, well-lit environment.
+- Use a stable internet connection for real-time telemetry.
+- Verify your microphone and camera are fully functional.
+
+Please complete this assessment at your earliest convenience. Your performance will be analyzed by our Talent Acquisition team, and you will receive a detailed performance summary immediately upon completion of the session.
+
+Wishing you the very best of luck!
+
+Best Regards,
+Global Talent Acquisition Team
+NextGen Dynamics Corp | Advanced AI Division
+------------------------------------------------------------------
+This is an automated transmission. Please do not reply directly to this email.
 """
         try:
             send_mail(

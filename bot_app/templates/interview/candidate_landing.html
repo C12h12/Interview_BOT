@@ -1,133 +1,164 @@
 {% extends "base.html" %}
 {% block content %}
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
 
-  body {
-    font-family: 'Inter', sans-serif;
-    background: #f0f4f8;
-  }
+<div class="landing-wrapper"
+    style="min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem;">
 
-  .invite-page {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 3rem 1rem;
-    background-image: radial-gradient(circle at top right, #e0e8ff 0%, #f0f4f8 100%);
-  }
+    <!-- PHASE 1: INSTRUCTIONS -->
+    <div id="step-instructions" class="glass-panel fade-in"
+        style="max-width: 800px; width: 100%; padding: 4rem; position: relative; overflow: hidden;">
+        <div
+            style="position: absolute; top: -50px; right: -50px; width: 200px; height: 200px; background: var(--accent-cyan); filter: blur(80px); opacity: 0.15;">
+        </div>
 
-  .premium-card {
-    background: rgba(255, 255, 255, 0.95);
-    border-radius: 20px;
-    padding: 3.5rem;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
-    max-width: 550px;
-    width: 100%;
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255,255,255,0.4);
-    text-align: center;
-    animation: fadeInUp 0.6s ease-out both;
-  }
+        <div style="text-align: center; margin-bottom: 3rem;">
+            <h2 style="font-size: 3.5rem; margin-bottom: 1rem;">Evaluation Rounds</h2>
+            <p style="font-size: 1.4rem; color: var(--text-muted);">Please review your assigned assessment sequence.</p>
+        </div>
 
-  .premium-card h2 {
-    font-weight: 700;
-    color: #0f172a;
-    margin-bottom: 1.5rem;
-    font-size: 2.4rem;
-    letter-spacing: -1px;
-  }
+        <div style="display: grid; gap: 1.5rem; margin-bottom: 4rem;">
+            {% if invite.round_type == 'aptitude' or invite.round_type == 'all' %}
+            <div class="glass-card"
+                style="display: flex; align-items: center; gap: 2rem; border-left: 4px solid var(--accent-cyan);">
+                <div style="font-size: 2rem; opacity: 0.8;">🧠</div>
+                <div>
+                    <h4 style="margin: 0; font-size: 1.4rem;">Cognitive Assessment</h4>
+                    <p style="margin: 4px 0 0; font-size: 1.1rem;">Analytical reasoning, logical deduction, and
+                        problem-solving metrics.</p>
+                </div>
+            </div>
+            {% endif %}
 
-  .premium-card p {
-    color: #64748b;
-    line-height: 1.6;
-    font-size: 1.15rem;
-    margin-bottom: 2.5rem;
-  }
+            {% if invite.round_type == 'technical' or invite.round_type == 'both' or invite.round_type == 'all' %}
+            <div class="glass-card"
+                style="display: flex; align-items: center; gap: 2rem; border-left: 4px solid var(--accent-blue);">
+                <div style="font-size: 2rem; opacity: 0.8;">💻</div>
+                <div>
+                    <h4 style="margin: 0; font-size: 1.4rem;">Technical Evaluation</h4>
+                    <p style="margin: 4px 0 0; font-size: 1.1rem;">Core engineering competencies, system architecture,
+                        and tech-stack proficiency.</p>
+                </div>
+            </div>
+            {% endif %}
 
-  .info-tag {
-    display: inline-block;
-    padding: 6px 12px;
-    border-radius: 20px;
-    background: #e0e7ff;
-    color: #4338ca;
-    font-weight: 600;
-    font-size: 0.9rem;
-    margin-bottom: 1.5rem;
-  }
+            {% if invite.round_type == 'hr' or invite.round_type == 'both' or invite.round_type == 'all' %}
+            <div class="glass-card"
+                style="display: flex; align-items: center; gap: 2rem; border-left: 4px solid var(--accent-purple);">
+                <div style="font-size: 2rem; opacity: 0.8;">🤝</div>
+                <div>
+                    <h4 style="margin: 0; font-size: 1.4rem;">Behavioral Assessment</h4>
+                    <p style="margin: 4px 0 0; font-size: 1.1rem;">Cultural alignment, leadership potential, and
+                        communication dynamics.</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
 
-  .custom-label {
-    display: block;
-    color: #334155;
-    font-weight: 600;
-    margin-bottom: 12px;
-    text-align: left;
-    font-size: 1rem;
-  }
+        <div class="glass-card"
+            style="background: rgba(255,255,255,0.02); border-color: rgba(255,255,255,0.05); margin-bottom: 4rem;">
+            <h4
+                style="font-size: 1.1rem; text-transform: uppercase; color: var(--accent-cyan); margin-bottom: 1rem; letter-spacing: 1px;">
+                System Checklist</h4>
+            <ul
+                style="list-style: none; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; font-size: 1rem;">
+                <li style="display: flex; align-items: center; gap: 10px;"><span style="color: #10b981;">✔</span> Active
+                    Microphone</li>
+                <li style="display: flex; align-items: center; gap: 10px;"><span style="color: #10b981;">✔</span> Camera
+                    Enabled</li>
+                <li style="display: flex; align-items: center; gap: 10px;"><span style="color: #10b981;">✔</span> Stable
+                    Neural Link</li>
+                <li style="display: flex; align-items: center; gap: 10px;"><span style="color: #10b981;">✔</span> Quiet
+                    Environment</li>
+            </ul>
+        </div>
 
-  .custom-input {
-    width: 100%;
-    border-radius: 12px;
-    padding: 1rem;
-    border: 1.5px solid #cbd5e1;
-    background: #f8fafc;
-    transition: all 0.3s ease;
-    font-size: 1.1rem;
-    color: #0f172a;
-    box-sizing: border-box;
-    cursor: pointer;
-  }
+        <button type="button" class="btn-premium" onclick="showUploadStep()"
+            style="width: 100%; padding: 1.5rem; font-size: 1.4rem;">
+            <span>Confirm & Proceed ➔</span>
+        </button>
+    </div>
 
-  .custom-input:focus {
-    border-color: #3b82f6;
-    background: #fff;
-    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
-    outline: none;
-  }
+    <!-- PHASE 2: UPLOAD (Hidden initially) -->
+    <div id="step-upload" class="glass-panel"
+        style="max-width: 550px; width: 100%; padding: 4rem; text-align: center; position: relative; overflow: hidden; display: none; opacity: 0;">
+        <div
+            style="position: absolute; top: -50px; right: -50px; width: 150px; height: 150px; background: var(--accent-purple); filter: blur(60px); opacity: 0.2;">
+        </div>
 
-  .start-btn {
-    background: linear-gradient(135deg, #2563eb, #1d4ed8);
-    border: none;
-    border-radius: 12px;
-    padding: 1.25rem 2rem;
-    font-size: 1.2rem;
-    font-weight: 600;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    color: #fff;
-    width: 100%;
-    cursor: pointer;
-    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
-    margin-top: 1.5rem;
-  }
+        <h2 style="font-size: 3.5rem; margin-bottom: 1.5rem; line-height: 1.1;">Welcome</h2>
+        <p style="margin-bottom: 4rem;">Please upload your resume to begin your assessment.</p>
 
-  .start-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(37, 99, 235, 0.4);
-  }
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
 
-  @keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(24px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-</style>
+            <div style="margin-bottom: 3rem; text-align: left;">
+                <label for="resumeFile" class="premium-label">Upload Latest Resume (PDF/DOC)</label>
+                <div style="position: relative;">
+                    <input class="premium-input" type="file" id="resumeFile" name="resumeFile" accept=".pdf,.doc,.docx"
+                        required style="padding-top: 12px;">
+                    <div style="position: absolute; right: 15px; top: 13px; pointer-events: none; opacity: 0.5;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="17 8 12 3 7 8" />
+                            <line x1="12" y1="3" x2="12" y2="15" />
+                        </svg>
+                    </div>
+                </div>
+            </div>
 
-<div class="invite-page">
-  <div class="premium-card">
-    <div class="info-tag">Invitation from HR</div>
-    <h2>Start Your Test</h2>
+            <button type="submit" class="btn-premium" style="width: 100%; padding: 1.5rem; font-size: 1.4rem;">
+                <span>🚀 Begin Assessment</span>
+            </button>
 
-    <form method="post" enctype="multipart/form-data">
-      {% csrf_token %}
-      
-      <div style="margin-bottom: 2rem;">
-        <label for="resumeFile" class="custom-label">Upload your latest Resume</label>
-        <input class="custom-input" type="file" id="resumeFile" name="resumeFile" accept=".pdf,.doc,.docx" required>
-      </div>
+            <button type="button" onclick="showInstructionStep()"
+                style="background: none; border: none; color: var(--text-muted); margin-top: 2rem; cursor: pointer; font-size: 1rem;">
+                ← Back to Instructions
+            </button>
+        </form>
+    </div>
 
-      <button type="submit" class="start-btn">
-        🚀 Begin Interview
-      </button>
-    </form>
-  </div>
 </div>
+
+<script>
+    function showUploadStep() {
+        const inst = document.getElementById('step-instructions');
+        const upload = document.getElementById('step-upload');
+
+        // Simple fade out/in
+        inst.style.transition = "all 0.5s ease";
+        inst.style.opacity = "0";
+        inst.style.transform = "translateY(-20px)";
+
+        setTimeout(() => {
+            inst.style.display = "none";
+            upload.style.display = "block";
+
+            // Trigger reflow
+            upload.offsetHeight;
+
+            upload.style.transition = "all 0.5s ease";
+            upload.style.opacity = "1";
+            upload.style.transform = "translateY(0)";
+        }, 500);
+    }
+
+    function showInstructionStep() {
+        const inst = document.getElementById('step-instructions');
+        const upload = document.getElementById('step-upload');
+
+        upload.style.opacity = "0";
+        upload.style.transform = "translateY(20px)";
+
+        setTimeout(() => {
+            upload.style.display = "none";
+            inst.style.display = "block";
+
+            inst.offsetHeight;
+            inst.style.opacity = "1";
+            inst.style.transform = "translateY(0)";
+        }, 500);
+    }
+</script>
+
 {% endblock content %}

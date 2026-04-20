@@ -1,164 +1,54 @@
 {% extends "base.html" %}
 {% block content %}
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
 
-  body {
-    font-family: 'Inter', sans-serif;
-    background: #f0f4f8; /* Soft subtle background */
-  }
+<div class="practice-wrapper" style="padding: 4rem 2rem; display: flex; align-items: center; justify-content: center; min-height: 100vh;">
+  <div class="glass-panel fade-in" style="max-width: 700px; width: 100%; padding: 4rem; position: relative;">
+    <div style="text-align: center; margin-bottom: 3rem;">
+        <h2 style="font-size: 3.5rem; margin-bottom: 1.5rem;">Practice Arena</h2>
+        <p style="font-size: 1.3rem;">Sharpen your cognitive and technical prowess before the real battle.</p>
+    </div>
 
-  .interview-page {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 3rem 1rem;
-    background-image: radial-gradient(circle at top right, #e0e8ff 0%, #f0f4f8 100%);
-  }
-
-  .premium-card {
-    background: rgba(255, 255, 255, 0.95);
-    border-radius: 20px;
-    padding: 3rem;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0,0,0,0.05);
-    max-width: 650px;
-    width: 100%;
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255,255,255,0.4);
-    text-align: center;
-  }
-
-  .premium-card h2 {
-    font-weight: 700;
-    color: #0f172a;
-    margin-bottom: 1rem;
-    font-size: 2.2rem;
-    letter-spacing: -0.5px;
-  }
-
-  .premium-card p {
-    color: #64748b;
-    line-height: 1.6;
-    font-size: 1.1rem;
-    margin-bottom: 2rem;
-  }
-
-  .custom-label {
-    display: block;
-    color: #334155;
-    font-weight: 600;
-    margin-bottom: 8px;
-    text-align: left;
-    font-size: 0.95rem;
-  }
-
-  .custom-input {
-    width: 100%;
-    border-radius: 12px;
-    padding: 0.85rem 1rem;
-    border: 1.5px solid #cbd5e1;
-    background: #f8fafc;
-    transition: all 0.3s ease;
-    font-size: 1rem;
-    color: #0f172a;
-    box-sizing: border-box;
-  }
-
-  .custom-input:focus {
-    border-color: #3b82f6;
-    background: #fff;
-    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
-    outline: none;
-  }
-
-  .form-group {
-    margin-bottom: 1.5rem;
-  }
-
-  .start-btn {
-    background: linear-gradient(135deg, #2563eb, #1d4ed8);
-    border: none;
-    border-radius: 12px;
-    padding: 1rem 2rem;
-    font-size: 1.15rem;
-    font-weight: 600;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    color: #fff;
-    width: 100%;
-    cursor: pointer;
-    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
-    margin-top: 1rem;
-  }
-
-  .start-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(37, 99, 235, 0.4);
-  }
-
-  .start-btn:active {
-    transform: translateY(1px);
-  }
-
-  .fadeIn {
-    animation: fadeInUp 0.6s ease-out both;
-  }
-
-  @keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-</style>
-
-<div class="interview-page">
-  <div class="premium-card fadeIn">
-    <h2>🎯 Interview Module</h2>
-    <p>Sharpen your interview skills with our AI-powered practice module. Upload your resume and JD to personalize your session.</p>
-
-
-
-    <form id="interviewForm" method="post" enctype="multipart/form-data">
+    <form id="interviewForm" method="post" enctype="multipart/form-data" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
       {% csrf_token %}
       
       <!-- Interview Type -->
       <div class="form-group">
-        <label for="interviewType" class="custom-label">Choose Interview Type</label>
-        <select class="custom-input" id="interviewType" name="interviewType" required>
-          <option value="" disabled selected>-- Select Type --</option>
-          <option value="aptitude">Aptitude Interview</option>
-          <option value="technical">Technical Interview</option>
-          <option value="hr">HR Interview</option>
-          <option value="all">Aptitude + Technical + HR</option>
+        <label for="interviewType" class="premium-label">Simulation Type</label>
+        <select class="premium-input" id="interviewType" name="interviewType" required>
+          <option value="" disabled selected>Select Type</option>
+          <option value="aptitude">Aptitude Simulation</option>
+          <option value="technical">Technical Simulation</option>
+          <option value="hr">Behavioral Simulation</option>
+          <option value="all">Full Protocol (All Rounds)</option>
         </select>
       </div>
 
       <!-- Difficulty -->
       <div class="form-group">
-        <label for="difficulty" class="custom-label">Select Difficulty</label>
-        <select class="custom-input" id="difficulty" name="difficulty" required>
-          <option value="" disabled selected>-- Select Difficulty --</option>
-          <option value="easy">Easy</option>
-          <option value="medium">Medium</option>
-          <option value="hard">Hard</option>
+        <label for="difficulty" class="premium-label">Cognitive Load</label>
+        <select class="premium-input" id="difficulty" name="difficulty" required>
+          <option value="" disabled selected>Select Difficulty</option>
+          <option value="easy">Level 1 (Easy)</option>
+          <option value="medium">Level 2 (Medium)</option>
+          <option value="hard">Level 3 (Hard)</option>
         </select>
       </div>
 
       <!-- JD Upload -->
       <div class="form-group">
-        <label for="jdFile" class="custom-label">Upload Job Description</label>
-        <input class="custom-input" type="file" id="jdFile" name="jdFile" accept=".pdf,.doc,.docx" required>
+        <label for="jdFile" class="premium-label">Job Architecture (JD)</label>
+        <input class="premium-input" type="file" id="jdFile" name="jdFile" accept=".pdf,.doc,.docx" required>
       </div>
 
       <!-- Resume Upload -->
       <div class="form-group">
-        <label for="resumeFile" class="custom-label">Upload Resume</label>
-        <input class="custom-input" type="file" id="resumeFile" name="resumeFile" accept=".pdf,.doc,.docx" required>
+        <label for="resumeFile" class="premium-label">Source Identity (Resume)</label>
+        <input class="premium-input" type="file" id="resumeFile" name="resumeFile" accept=".pdf,.doc,.docx" required>
       </div>
 
-      <div class="mt-4">
-        {% load static %}
-        <button id="startDemoBtn" type="button" class="start-btn">
-          🚀 Start Free Practice Session
+      <div style="grid-column: span 2; margin-top: 1.5rem;">
+        <button id="startDemoBtn" type="button" class="btn-premium" style="width: 100%; padding: 1.25rem; font-size: 1.2rem;">
+          <span>🚀 Initialize Neural Link</span>
         </button>
       </div>
     </form>
@@ -177,12 +67,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const resumeFile    = form.querySelector('input[name="resumeFile"]').files[0];
 
     if (!interviewType || !difficulty || !jdFile || !resumeFile) {
-      alert("Please fill all fields and upload both files before starting.");
+      alert("System Error: Please populate all data vectors before initialization.");
       return;
     }
 
     startBtn.disabled = true;
-    startBtn.textContent = '⏳ Starting...';
+    startBtn.innerHTML = '<span>⏳ Linking...</span>';
 
     try {
       const formData = new FormData(form);
@@ -195,9 +85,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const saveData = await saveResp.json();
 
       if (!saveData.success) {
-        alert("Error saving your details. Please try again.");
+        alert("Linking Failure: Please recalibrate and try again.");
         startBtn.disabled = false;
-        startBtn.textContent = '🚀 Start Free Practice Session';
+        startBtn.innerHTML = '<span>🚀 Initialize Neural Link</span>';
         return;
       }
 
@@ -205,9 +95,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     } catch (err) {
       console.error("Error starting session:", err);
-      alert("An unexpected error occurred. Please try again.");
+      alert("Critical Error: Unexpected pulse detected in server.");
       startBtn.disabled = false;
-      startBtn.textContent = '🚀 Start Free Practice Session';
+      startBtn.innerHTML = '<span>🚀 Initialize Neural Link</span>';
     }
   };
 });

@@ -3,7 +3,7 @@ import time
 import tempfile
 import os
 from channels.generic.websocket import WebsocketConsumer
-from bot_app.prompts import get_level_prompt, type_prompt
+from bot_app.prompts import get_level_prompt, type_prompt, UNIVERSAL_INTERVIEW_RULES
 from bot_app.evaluator import evaluate_answer
 from bot_app.generator import generate_next_question, extract_name_from_resume
 from bot_app.report_generator import generate_report
@@ -85,22 +85,28 @@ class InterviewConsumer(WebsocketConsumer):
         print(f"DEBUG: Extracted Candidate Name: {self.candidate_name}")
         
         base_prompt = f"""
-You are an AI Interview Preparation Assistant. Your role is to simulate a professional interview 
-for the candidate, using the provided job description and resume. You must ask relevant, 
-context-aware questions and give constructive feedback.
+You are an AI Interview Preparation Assistant.
 ==================================================================
 📌 Context
 ------------------------------------------------------------------
 Interview Level: {get_level_prompt(level)}
-Current Round: {type_prompt(round_type)}
+Current Round (INITIAL): 
+{type_prompt(round_type)}
+
 Job Description (JD): 
 {job_desc_text}
 
 Candidate Resume: 
 {resume_text}
 ==================================================================
-        """
-        self.conversation_history = base_prompt + "\nIMPORTANT: Start the interview by asking the very first question of the current round immediately. No introductory fluff. No appreciation.\nInterviewer:"
+
+{UNIVERSAL_INTERVIEW_RULES}
+
+==================================================================
+IMPORTANT: You are now starting the first round. Ask the very first question immediately.
+No introductory fluff. No appreciation of the resume. Just start.
+Interviewer:"""
+        self.conversation_history = base_prompt
         self.evaluation_log = []
         
         # Generate and send first question
@@ -201,12 +207,30 @@ Candidate Resume:
             
         if answer:
             self.send(text_data=json.dumps({"answer": answer})) # Echo back the transcribed answer
+            
+            # Check for wait/repeat requests
+            answer_lower = answer.lower()
+            wait_keywords = ["wait", "hold on", "give me a second", "repeat", "pardon", "didn't hear", "come again", "pause"]
+            if any(k in answer_lower for k in wait_keywords):
+                repeat_msg = f"Sure, no problem. Let me repeat the question for you: {self.interviewer_question}"
+                self.send(text_data=json.dumps({"question": repeat_msg}))
+                # We do NOT append this to conversation history or generate a new question
+                return
+
             self.conversation_history += f"\nCandidate: {answer}\nInterviewer:"
             
             # Evaluate
             eval_data = evaluate_answer(answer, self.interviewer_question)
             eval_data["question"] = self.interviewer_question
             eval_data["answer"] = answer
+
+            round_display_names = {
+                'technical': 'Technical Evaluation',
+                'hr': 'Behavioral/HR Round',
+                'aptitude': 'Aptitude Assesment',
+                'all': 'Comprehensive (All Rounds)'
+            }
+            eval_data["round_name"] = round_display_names.get(self.user.current_round, self.user.current_round.capitalize())
             self.evaluation_log.append(eval_data)
         else:
             # Time up with no final answer
@@ -226,11 +250,11 @@ Candidate Resume:
                 self.current_round_duration = 60
                 
                 round_display_names = {
-                    'technical': 'Technical',
-                    'hr': 'HR',
-                    'aptitude': 'Aptitude'
+                    'technical': 'Technical Evaluation',
+                    'hr': 'Behavioral/HR Round',
+                    'aptitude': 'Aptitude Assesment'
                 }
-                next_round_name = round_display_names.get(next_round, next_round.capitalize())
+                next_round_name = round_display_names.get(next_round, next_round.replace('_', ' ').capitalize())
                 
                 self.send(text_data=json.dumps({
                     "type": "round_complete", 
@@ -241,7 +265,21 @@ Candidate Resume:
                 # Immediate time sync for the next round (60s)
                 self.send(text_data=json.dumps({"type": "time_update", "remaining_seconds": 60}))
                 
-                self.conversation_history += f"\n--- End of {current_round} round. Now START {next_round} ROUND focusing on: {type_prompt(next_round)} ---\nInterviewer:"
+                self.conversation_history += f"""
+==================================================================
+🚦 SYSTEM TRIGGER: ROLE CHANGE
+------------------------------------------------------------------
+The {current_round.capitalize()} round is now complete.
+You are now switching to the **{next_round.upper()}** round.
+
+NEW PERSONA & FOCUS:
+{type_prompt(next_round)}
+
+INSTRUCTIONS:
+1. Immediately transition to the {next_round.upper()} round.
+2. Ask the first question of the {next_round.upper()} round.
+==================================================================
+Interviewer:"""
                 
                 default_qs = {
                     'technical': "Great. Let's move to the technical assessment. Can you describe a project you've worked on recently?",
@@ -277,11 +315,14 @@ Candidate Resume:
             
             level = getattr(self.user, 'interview_difficulty', 'Moderate')
             # Dynamically set display mode
+            round_display_names = {
+                'technical': 'Technical Evaluation',
+                'hr': 'Behavioral/HR Round',
+                'aptitude': 'Aptitude Assesment',
+                'all': 'Comprehensive (All Rounds)'
+            }
             raw_mode = self.user.interview_type or "technical"
-            if raw_mode.lower() == "all":
-                t_type = "Full Interview (Aptitude, Technical & HR)"
-            else:
-                t_type = f"{raw_mode.capitalize()} Interview"
+            t_type = round_display_names.get(raw_mode.lower(), f"{raw_mode.capitalize()} Interview")
             
             final_report = generate_report(level, t_type, self.evaluation_log)
             
@@ -297,6 +338,7 @@ Candidate Resume:
                     "total_questions": len(self.evaluation_log),
                     "summary_text": final_report["interview_summary"]["summary_text"]
                 },
+                "grouped_rounds": final_report["grouped_rounds"],
                 "tech_section": self.evaluation_log,
                 "overall": {
                     "average_score": final_report["overall"]["average_score"],
